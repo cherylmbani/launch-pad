@@ -29,7 +29,7 @@ class Repository(db.Model, SerializerMixin):
     id=db.Column(db.Integer, primary_key=True)
     name=db.Column(db.String, nullable=False)
     description=db.Column(db.Text)
-    primary_language=db.Column(db.String, nullable=False)
+    primary_language=db.Column(db.String, nullable=True)
     stars=db.Column(db.Integer, default=0)
     project_type=db.Column(db.String, nullable=False)
     updated_at=db.Column(db.DateTime, default=datetime.utcnow)

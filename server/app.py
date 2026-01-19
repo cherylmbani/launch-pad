@@ -2,10 +2,11 @@ from flask import Flask, jsonify, request, make_response, session
 from models import Repository, User, db, migrate, bcrypt
 from flask_cors import CORS
 from flask_restful import Api, Resource
+import requests
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///transactions.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lauchpad.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["SECRET_KEY"] = "super_secret"
 app.json.compact = False
@@ -70,12 +71,102 @@ class Logout(Resource):
         response=make_response(response_body, 200)
         return response
 
+class GithubAnalysis(Resource):
+    def post(self):
+        try:
+            data = request.get_json()
+            github_username = data.get('github_username')
+            
+            if not github_username:
+                return {'error': "GitHub username is required"}, 400
+            
+            # Get current user (for now, use a test user)
+            # Later we'll use: user_id = session.get('user_id')
+            test_user = User.query.first()  # Get first user in database
+            if not test_user:
+                return {'error': "No user found. Sign up first."}, 400
+            
+            url = f"https://api.github.com/users/{github_username}/repos"
+            response = requests.get(url)
+            
+            if response.status_code != 200:
+                return {'error': f"GitHub API error: {response.status_code}"}, response.status_code
+            
+            repos = response.json()
+            
+            # Save first 3 repos to database (start small)
+            saved_count = 0
+            for repo in repos: 
+                # Skip if repo already exists
+                existing = Repository.query.filter_by(
+                    name=repo.get('name'), 
+                    user_id=test_user.id
+                ).first()
+                
+                if not existing:
+                    new_repo = Repository(
+                        name=repo.get('name', 'No Name'),
+                        description=repo.get('description', ''),
+                        primary_language=repo.get('language', 'Unknown'),
+                        stars=repo.get('stargazers_count', 0),
+                        project_type='personal',  # Simple for now
+                        user_id=test_user.id
+                    )
+                    db.session.add(new_repo)
+                    saved_count += 1
+            
+            db.session.commit()
+            # Calculate language statistics
+            language_stats = {}
+            for repo in repos:
+                lang = repo.get('language', 'Unknown')
+                language_stats[lang] = language_stats.get(lang, 0) + 1
 
+# Find most used language
+            most_used = max(language_stats.items(), key=lambda x: x[1]) if language_stats else ("None", 0)
+            
+            return {
+                "username": github_username,
+                "total_repos_fetched": len(repos),
+                "repos_saved": saved_count,
+                "language_stats": language_stats,
+                "most_used_language": most_used[0],
+                "message": f"Successfully saved {saved_count} repositories to database"
+            }, 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+        
+class UserRepositories(Resource):
+    def get(self):
+        # For now, get all repos (later we'll filter by user)
+        repos = Repository.query.all()
+        
+        repos_data = []
+        for repo in repos:
+            repos_data.append({
+                'id': repo.id,
+                'name': repo.name,
+                'description': repo.description,
+                'language': repo.primary_language,
+                'stars': repo.stars,
+                'type': repo.project_type,
+                'updated_at': repo.updated_at.isoformat() if repo.updated_at else None
+            })
+        
+        return {
+            'total_repositories': len(repos_data),
+            'repositories': repos_data
+        }, 200
+    
 
 api.add_resource(Start, '/welcome')
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
+api.add_resource(GithubAnalysis, '/githubanalysis')
+api.add_resource(UserRepositories, '/user/repositories')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
