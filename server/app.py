@@ -82,8 +82,11 @@ class GithubAnalysis(Resource):
             
             # Get current user (for now, use a test user)
             test_user = User.query.first()  # Get first user in database
+            print(f"DEBUG: test_user = {test_user}")  # Add this line
             if not test_user:
+                print("DEBUG: No user found!")
                 return {'error': "No user found. Sign up first."}, 400
+            
             
             url = f"https://api.github.com/users/{github_username}/repos"
             response = requests.get(url)
@@ -191,3 +194,5 @@ api.add_resource(UserRepositories, '/user/repositories')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+
+    # kill -9 $(lsof -t -i:5555)
