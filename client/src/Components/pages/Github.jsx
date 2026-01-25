@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../Styles/Github.css"
+import PortfolioAssessment from "./PortfolioAssessment";
 
 function GitHubAnalysis() {
     const [analysis, setAnalysis] = useState(null);
@@ -130,6 +131,21 @@ function GitHubAnalysis() {
                     Refresh Analysis
                 </button>
             </div>
+            {console.log("1.Analysis exists?", !!analysis)}
+            {console.log("2. Repos exists?", analysis?.repos)}
+            {console.log("3. Repos count:", analysis?.repos?.length)}
+            {console.log("4. Should render Portfolio?", analysis && analysis.repos)}
+            
+            {analysis && (
+                <PortfolioAssessment repos={
+                    analysis.repos || 
+                    analysis.repositories || 
+                    analysis.user_repos || 
+                    
+                    [] 
+                } />
+            )}
+            
         </div>
     );
 }

@@ -81,7 +81,6 @@ class GithubAnalysis(Resource):
                 return {'error': "GitHub username is required"}, 400
             
             # Get current user (for now, use a test user)
-            # Later we'll use: user_id = session.get('user_id')
             test_user = User.query.first()  # Get first user in database
             if not test_user:
                 return {'error': "No user found. Sign up first."}, 400
@@ -94,8 +93,10 @@ class GithubAnalysis(Resource):
             
             repos = response.json()
             
-            # Save first 3 repos to database (start small)
+            # Save repos to database and format for response
             saved_count = 0
+            formatted_repos = []  # This will be sent to frontend
+            
             for repo in repos: 
                 # Skip if repo already exists
                 existing = Repository.query.filter_by(
@@ -114,16 +115,35 @@ class GithubAnalysis(Resource):
                     )
                     db.session.add(new_repo)
                     saved_count += 1
+                
+                # Format repo data for frontend response
+                formatted_repos.append({
+                    'name': repo.get('name', 'No Name'),
+                    'description': repo.get('description', ''),
+                    'language': repo.get('language'),
+                    'has_pages': repo.get('has_pages', False),
+                    'homepage': repo.get('homepage'),
+                    'updated_at': repo.get('updated_at'),
+                    'stargazers_count': repo.get('stargazers_count', 0),
+                    'fork': repo.get('fork', False)
+                })
             
             db.session.commit()
+            
             # Calculate language statistics
             language_stats = {}
             for repo in repos:
-                lang = repo.get('language', 'Unknown')
-                language_stats[lang] = language_stats.get(lang, 0) + 1
+                lang = repo.get('language')
+                if lang:
+                    language_stats[lang] = language_stats.get(lang, 0) + 1
+                else:
+                    language_stats['No language'] = language_stats.get('No language', 0) + 1
 
-# Find most used language
-            most_used = max(language_stats.items(), key=lambda x: x[1]) if language_stats else ("None", 0)
+            # Find most used language
+            if language_stats:
+                most_used = max(language_stats.items(), key=lambda x: x[1])
+            else:
+                most_used = ("None", 0)
             
             return {
                 "username": github_username,
@@ -131,6 +151,7 @@ class GithubAnalysis(Resource):
                 "repos_saved": saved_count,
                 "language_stats": language_stats,
                 "most_used_language": most_used[0],
+                "repos": formatted_repos,  # ← THIS IS THE CRITICAL LINE
                 "message": f"Successfully saved {saved_count} repositories to database"
             }, 200
             
