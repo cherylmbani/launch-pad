@@ -137,13 +137,10 @@ function GitHubAnalysis() {
             {console.log("4. Should render Portfolio?", analysis && analysis.repos)}
             
             {analysis && (
-                <PortfolioAssessment repos={
-                    analysis.repos || 
-                    analysis.repositories || 
-                    analysis.user_repos || 
-                    
-                    [] 
-                } />
+                <PortfolioAssessment 
+                repos={analysis.repos || []}
+                username={JSON.parse(localStorage.getItem("user"))?.github_username}
+    />
             )}
             
         </div>
