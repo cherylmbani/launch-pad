@@ -8,6 +8,7 @@ function PortfolioAssessment({ repos, username }) {
   const [assessment, setAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [portfolioRepo, setPortfolioRepo] = useState(null);
+  const [detectionReason, setDetectionReason] = useState('');
 
   useEffect(() => {
     console.log("🔍 Looking for portfolio repositories...");
@@ -40,26 +41,84 @@ function PortfolioAssessment({ repos, username }) {
     ];
     
     // Find ALL potential portfolio repos
-    const potentialPortfolios = repos.filter(repo => {
+    const potentialPortfolios = repos.map(repo => {
       const repoName = repo.name?.toLowerCase() || '';
       const repoDesc = repo.description?.toLowerCase() || '';
       const combined = `${repoName} ${repoDesc}`;
       
-      // Check for portfolio indicators
-      const hasPortfolioKeyword = portfolioKeywords.some(keyword => 
-        combined.includes(keyword)
+      // Calculate portfolio score
+      let score = 0;
+      let reasons = [];
+      
+      // 1. Name contains "portfolio" (STRONGEST SIGNAL)
+      if (repoName.includes('portfolio')) {
+        score += 200;
+        reasons.push('Name contains "portfolio"');
+      }
+      
+      // 2. Description contains "portfolio"
+      if (repoDesc.includes('portfolio')) {
+        score += 150;
+        reasons.push('Description mentions "portfolio"');
+      }
+      
+      // 3. Name matches username (common pattern: username/username)
+      if (username && repoName === username.toLowerCase()) {
+        score += 100;
+        reasons.push('Repository name matches username');
+      }
+      
+      // 4. Name contains username
+      if (username && repoName.includes(username.toLowerCase())) {
+        score += 80;
+        reasons.push('Repository name contains username');
+      }
+      
+      // 5. Contains other portfolio keywords
+      const hasOtherKeywords = portfolioKeywords.some(keyword => 
+        combined.includes(keyword) && keyword !== 'portfolio'
       );
+      if (hasOtherKeywords) {
+        score += 50;
+        reasons.push('Contains portfolio-related keywords');
+      }
       
-      // Also check if repo name matches username (common pattern: username.github.io)
-      const matchesUsername = username && repoName.includes(username.toLowerCase());
+      // 6. Has description
+      if (repo.description) {
+        score += 40;
+        reasons.push('Has description');
+      }
       
-      return hasPortfolioKeyword || matchesUsername;
+      // 7. Has GitHub Pages or homepage (WEAK SIGNAL for portfolio)
+      if (repo.has_pages || repo.homepage) {
+        score += 30;
+        reasons.push('Has live deployment');
+      }
+      
+      // 8. Name ends with .github.io
+      if (repoName.endsWith('.github.io')) {
+        score += 100;
+        reasons.push('GitHub Pages repository (.github.io)');
+      }
+      
+      return {
+        repo,
+        score,
+        reasons,
+        detectionScore: score
+      };
     });
 
-    console.log("🎯 Potential portfolio repos:", potentialPortfolios.length);
+    console.log("🎯 All potential portfolios:", potentialPortfolios);
 
-    if (potentialPortfolios.length === 0) {
-      console.log("❌ No portfolio repo found");
+    // Sort by portfolio score (highest first)
+    potentialPortfolios.sort((a, b) => b.score - a.score);
+    
+    const topCandidates = potentialPortfolios.slice(0, 3);
+    console.log("🏆 Top candidates:", topCandidates);
+
+    if (topCandidates.length === 0 || topCandidates[0].score < 50) {
+      console.log("❌ No strong portfolio candidate found");
       setAssessment({
         totalScore: 0,
         completeness: 0,
@@ -75,7 +134,7 @@ function PortfolioAssessment({ repos, username }) {
         },
         recommendations: [
           'Create a portfolio repository on GitHub',
-          'Name it something like "portfolio", "personal-website", or include your username',
+          'Name it something like "portfolio", "personal-website", or use your username',
           'Add a description mentioning your projects and skills'
         ]
       });
@@ -83,16 +142,13 @@ function PortfolioAssessment({ repos, username }) {
       return;
     }
 
-    // Take the best candidate (prioritize repos with descriptions)
-    const foundPortfolio = potentialPortfolios.sort((a, b) => {
-      // Sort by: has description, has live demo, name matches username
-      const scoreA = (a.description ? 100 : 0) + (a.has_pages || a.homepage ? 50 : 0);
-      const scoreB = (b.description ? 100 : 0) + (b.has_pages || b.homepage ? 50 : 0);
-      return scoreB - scoreA;
-    })[0];
-
-    setPortfolioRepo(foundPortfolio);
+    const bestCandidate = topCandidates[0];
+    setPortfolioRepo(bestCandidate.repo);
+    setDetectionReason(bestCandidate.reasons.join(', '));
     
+    console.log("✅ Selected portfolio:", bestCandidate.repo.name);
+    console.log("📝 Detection reason:", bestCandidate.reasons);
+
     // Generic analysis for ANY user's portfolio
     const analyzePortfolioRepo = (repo) => {
       console.log("📊 Analyzing portfolio repo:", repo.name);
@@ -176,7 +232,8 @@ function PortfolioAssessment({ repos, username }) {
         stars: repo.stargazers_count || 0,
         descriptionLength: repo.description?.length || 0,
         deploymentType: deploymentType,
-        isGitHubPages: repo.has_pages || false
+        isGitHubPages: repo.has_pages || false,
+        detectionScore: bestCandidate.score
       };
       
       // Ensure score doesn't exceed 100
@@ -209,7 +266,7 @@ function PortfolioAssessment({ repos, username }) {
       };
     };
     
-    const result = analyzePortfolioRepo(foundPortfolio);
+    const result = analyzePortfolioRepo(bestCandidate.repo);
     setAssessment(result);
     setLoading(false);
     
@@ -253,6 +310,13 @@ function PortfolioAssessment({ repos, username }) {
               </p>
             </div>
           </div>
+          
+          {/* Show detection info */}
+          {detectionReason && (
+            <div className="detection-info">
+              <p><strong>Why this was detected as portfolio:</strong> {detectionReason}</p>
+            </div>
+          )}
           
           <div className="portfolio-details">
             <div className="detail-card">
