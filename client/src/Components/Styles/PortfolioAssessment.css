@@ -3,7 +3,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 16px;
   padding: 25px;
-  margin-top: 20px;
+  margin-top: 30px;
   color: white;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
@@ -16,104 +16,48 @@
   gap: 10px;
 }
 
-.portfolio-assessment.loading {
-  text-align: center;
-  padding: 40px;
-}
-
-.score-card {
-  display: flex;
-  gap: 30px;
+.portfolio-header {
   background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
+  padding: 15px;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
   margin-bottom: 20px;
+  backdrop-filter: blur(10px);
 }
 
-.total-score {
-  text-align: center;
-  min-width: 150px;
-}
-
-.total-score h3 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  opacity: 0.9;
-}
-
-.score-circle {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 10px;
-  border: 3px solid white;
-}
-
-.score-number {
-  font-size: 32px;
-  font-weight: bold;
-}
-
-.score-feedback {
-  font-size: 14px;
-  margin: 0;
-}
-
-.score-details {
-  flex: 1;
-}
-
-.score-details h4 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
+.portfolio-score {
+  margin-top: 15px;
 }
 
 .score-bar {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 12px;
-}
-
-.score-bar span:first-child {
-  width: 120px;
-  font-size: 14px;
-}
-
-.bar-container {
-  flex: 1;
-  height: 8px;
+  width: 100%;
+  height: 20px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 10px;
+  margin: 10px 0;
   overflow: hidden;
 }
 
-.bar-fill {
+.score-fill {
   height: 100%;
-  background: white;
-  border-radius: 4px;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  border-radius: 10px;
   transition: width 0.5s ease;
 }
 
-.score-bar span:last-child {
-  width: 40px;
-  text-align: right;
-  font-weight: bold;
+.score-message {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 5px;
 }
 
-.stats-grid {
+.portfolio-details {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin: 20px 0;
 }
 
-.stat-item {
+.detail-card {
   background: rgba(255, 255, 255, 0.1);
   padding: 15px;
   border-radius: 8px;
@@ -122,14 +66,63 @@
   align-items: center;
 }
 
-.stat-label {
+.detail-label {
   font-size: 14px;
   opacity: 0.9;
 }
 
-.stat-value {
-  font-size: 20px;
+.detail-value {
   font-weight: bold;
+  font-size: 16px;
+}
+
+.portfolio-breakdown {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+
+.breakdown-item span:first-child {
+  width: 120px;
+  font-size: 14px;
+}
+
+.breakdown-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.breakdown-bar div {
+  height: 100%;
+  background: white;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.breakdown-item span:last-child {
+  width: 40px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.no-portfolio {
+  background: rgba(255, 0, 0, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 20px 0;
+  border: 2px dashed rgba(255, 0, 0, 0.3);
 }
 
 .recommendations {
@@ -156,32 +149,52 @@
   font-size: 14px;
 }
 
-.improve-button {
-  background: white;
-  color: #667eea;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  width: 100%;
-  font-size: 16px;
+.repo-link {
+  text-align: center;
+  margin-top: 20px;
 }
 
-.improve-button:hover {
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.repo-link a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: inline-block;
+  transition: background 0.3s;
+}
+
+.repo-link a:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading h2 {
+  margin-bottom: 10px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .score-card {
-    flex-direction: column;
+  .portfolio-details {
+    grid-template-columns: 1fr;
   }
   
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .breakdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .breakdown-item span:first-child {
+    width: auto;
+  }
+  
+  .breakdown-bar {
+    width: 100%;
   }
 }
