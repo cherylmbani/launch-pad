@@ -1,282 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import "../Styles/PortfolioAssessment.css";
 
-function PortfolioAssessment({ repos, username }) {
-  console.log("📦 Analyzing for user:", username);
+function PortfolioAssessment({ assessment, username }) {
+  console.log("📦 PortfolioAssessment received:", assessment);
   
-  const [assessment, setAssessment] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [portfolioRepo, setPortfolioRepo] = useState(null);
-  const [detectionReason, setDetectionReason] = useState('');
-
-  useEffect(() => {
-    console.log("🔍 Looking for portfolio repositories...");
-    
-    if (!repos || repos.length === 0) {
-      console.log("⚠️ No repos to analyze");
-      setAssessment({
-        totalScore: 0,
-        completeness: 0,
-        codeQuality: 0,
-        bestPractices: 0,
-        presentation: 0,
-        stats: {
-          hasPortfolio: false,
-          repoName: 'Not found',
-          hasDescription: false,
-          hasLiveDemo: false,
-          showsProjects: false
-        },
-        recommendations: ['No repositories found']
-      });
-      setLoading(false);
-      return;
-    }
-
-    // GENERIC: Find portfolio repos for ANY user
-    const portfolioKeywords = [
-      'portfolio', 'personal', 'website', 'cv', 'resume', 
-      'showcase', 'projects', 'me', 'homepage', 'site'
-    ];
-    
-    // Find ALL potential portfolio repos
-    const potentialPortfolios = repos.map(repo => {
-      const repoName = repo.name?.toLowerCase() || '';
-      const repoDesc = repo.description?.toLowerCase() || '';
-      const combined = `${repoName} ${repoDesc}`;
-      
-      // Calculate portfolio score
-      let score = 0;
-      let reasons = [];
-      
-      // 1. Name contains "portfolio" (STRONGEST SIGNAL)
-      if (repoName.includes('portfolio')) {
-        score += 200;
-        reasons.push('Name contains "portfolio"');
-      }
-      
-      // 2. Description contains "portfolio"
-      if (repoDesc.includes('portfolio')) {
-        score += 150;
-        reasons.push('Description mentions "portfolio"');
-      }
-      
-      // 3. Name matches username (common pattern: username/username)
-      if (username && repoName === username.toLowerCase()) {
-        score += 100;
-        reasons.push('Repository name matches username');
-      }
-      
-      // 4. Name contains username
-      if (username && repoName.includes(username.toLowerCase())) {
-        score += 80;
-        reasons.push('Repository name contains username');
-      }
-      
-      // 5. Contains other portfolio keywords
-      const hasOtherKeywords = portfolioKeywords.some(keyword => 
-        combined.includes(keyword) && keyword !== 'portfolio'
-      );
-      if (hasOtherKeywords) {
-        score += 50;
-        reasons.push('Contains portfolio-related keywords');
-      }
-      
-      // 6. Has description
-      if (repo.description) {
-        score += 40;
-        reasons.push('Has description');
-      }
-      
-      // 7. Has GitHub Pages or homepage (WEAK SIGNAL for portfolio)
-      if (repo.has_pages || repo.homepage) {
-        score += 30;
-        reasons.push('Has live deployment');
-      }
-      
-      // 8. Name ends with .github.io
-      if (repoName.endsWith('.github.io')) {
-        score += 100;
-        reasons.push('GitHub Pages repository (.github.io)');
-      }
-      
-      return {
-        repo,
-        score,
-        reasons,
-        detectionScore: score
-      };
-    });
-
-    console.log("🎯 All potential portfolios:", potentialPortfolios);
-
-    // Sort by portfolio score (highest first)
-    potentialPortfolios.sort((a, b) => b.score - a.score);
-    
-    const topCandidates = potentialPortfolios.slice(0, 3);
-    console.log("🏆 Top candidates:", topCandidates);
-
-    if (topCandidates.length === 0 || topCandidates[0].score < 50) {
-      console.log("❌ No strong portfolio candidate found");
-      setAssessment({
-        totalScore: 0,
-        completeness: 0,
-        codeQuality: 0,
-        bestPractices: 0,
-        presentation: 0,
-        stats: {
-          hasPortfolio: false,
-          repoCount: 0,
-          hasDescription: false,
-          hasLiveDemo: false,
-          showsProjects: false
-        },
-        recommendations: [
-          'Create a portfolio repository on GitHub',
-          'Name it something like "portfolio", "personal-website", or use your username',
-          'Add a description mentioning your projects and skills'
-        ]
-      });
-      setLoading(false);
-      return;
-    }
-
-    const bestCandidate = topCandidates[0];
-    setPortfolioRepo(bestCandidate.repo);
-    setDetectionReason(bestCandidate.reasons.join(', '));
-    
-    console.log("✅ Selected portfolio:", bestCandidate.repo.name);
-    console.log("📝 Detection reason:", bestCandidate.reasons);
-
-    // Generic analysis for ANY user's portfolio
-    const analyzePortfolioRepo = (repo) => {
-      console.log("📊 Analyzing portfolio repo:", repo.name);
-      
-      // Scoring criteria (generic for all users)
-      let score = 0;
-      let recommendations = [];
-      
-      // 1. Has description? (25 points)
-      const hasDescription = repo.description && repo.description.length > 10;
-      if (hasDescription) {
-        score += 25;
-        // Bonus for longer descriptions
-        if (repo.description.length > 50) score += 5;
-      } else {
-        recommendations.push('Add a description to your portfolio repository');
-      }
-      
-      // 2. Has live demo/website? (40 points)
-      const deploymentPlatforms = [
-        'netlify.app', 'vercel.app', 'github.io', 'herokuapp.com',
-        'firebaseapp.com', 'render.com', 'pages.dev'
-      ];
-      
-      const hasLiveDemo = repo.has_pages || repo.homepage || 
-        deploymentPlatforms.some(platform => 
-          repo.description?.toLowerCase().includes(platform)
-        );
-      
-      if (hasLiveDemo) {
-        score += 40;
-        if (repo.has_pages) {
-          recommendations.push('✅ GitHub Pages enabled - great for portfolio!');
-        }
-      } else {
-        recommendations.push('Deploy your portfolio using GitHub Pages, Netlify, or Vercel');
-        recommendations.push('Add the deployment URL to your repo description');
-      }
-      
-      // 3. Shows projects or skills? (20 points)
-      const projectKeywords = ['project', 'demo', 'live', 'deployed', 'showcase', 'skill', 'experience'];
-      const showsProjects = projectKeywords.some(keyword => 
-        repo.description?.toLowerCase().includes(keyword)
-      );
-      
-      if (showsProjects) {
-        score += 20;
-      } else if (hasDescription) {
-        recommendations.push('Mention your projects, skills, or experience in the description');
-      }
-      
-      // 4. Technologies used (10 points)
-      const hasTech = repo.language && repo.language !== 'Unknown';
-      if (hasTech) score += 10;
-      
-      // 5. Recent updates (5 points)
-      if (repo.updated_at) {
-        const updatedDate = new Date(repo.updated_at);
-        const now = new Date();
-        const monthsDiff = (now - updatedDate) / (1000 * 60 * 60 * 24 * 30);
-        if (monthsDiff < 6) score += 5;
-        else if (monthsDiff < 12) score += 3;
-      }
-      
-      // Detect deployment platform
-      let deploymentType = 'Not deployed';
-      if (repo.has_pages) deploymentType = 'GitHub Pages';
-      else if (repo.homepage) deploymentType = 'Custom Domain';
-      else if (repo.description?.includes('netlify')) deploymentType = 'Netlify';
-      else if (repo.description?.includes('vercel')) deploymentType = 'Vercel';
-      else if (repo.description?.includes('heroku')) deploymentType = 'Heroku';
-      
-      // Calculate stats
-      const stats = {
-        hasPortfolio: true,
-        repoName: repo.name,
-        hasDescription: hasDescription,
-        hasLiveDemo: hasLiveDemo,
-        showsProjects: showsProjects,
-        lastUpdated: repo.updated_at || 'Unknown',
-        stars: repo.stargazers_count || 0,
-        descriptionLength: repo.description?.length || 0,
-        deploymentType: deploymentType,
-        isGitHubPages: repo.has_pages || false,
-        detectionScore: bestCandidate.score
-      };
-      
-      // Ensure score doesn't exceed 100
-      score = Math.min(score, 100);
-      
-      // Add score-based feedback
-      if (score >= 80) {
-        recommendations.push('🎯 Excellent portfolio! Ready for job applications');
-      } else if (score >= 60) {
-        recommendations.push('👍 Good start, but could be improved');
-      } else if (score >= 40) {
-        recommendations.push('⚠️ Needs significant improvement for job applications');
-      } else {
-        recommendations.push('🚨 Major improvements needed');
-      }
-      
-      // Add platform-specific recommendations
-      if (!repo.has_pages && !repo.homepage) {
-        recommendations.push('💡 Enable GitHub Pages in repository settings');
-      }
-      
-      return {
-        totalScore: score,
-        completeness: hasDescription ? (repo.description.length > 50 ? 10 : 8) : 3,
-        codeQuality: hasTech ? 8 : 4,
-        bestPractices: repo.updated_at ? 7 : 3,
-        presentation: hasLiveDemo ? 10 : 2,
-        stats,
-        recommendations: recommendations.length > 0 ? recommendations : ['✅ Your portfolio looks good!']
-      };
-    };
-    
-    const result = analyzePortfolioRepo(bestCandidate.repo);
-    setAssessment(result);
-    setLoading(false);
-    
-  }, [repos, username]);
-
-  if (loading || !assessment) {
+  if (!assessment) {
     return (
       <div className="portfolio-assessment loading">
-        <h2>🔍 Analyzing Portfolio...</h2>
-        <p>Checking {repos?.length || 0} repositories for {username || 'user'}</p>
+        <h2>📊 Portfolio Analysis</h2>
+        <p>No portfolio data available</p>
       </div>
     );
   }
@@ -286,9 +19,13 @@ function PortfolioAssessment({ repos, username }) {
     repoName: 'Not found'
   };
 
+  // Get portfolio repo from assessment or stats
+  const portfolioRepo = assessment.portfolioRepo || 
+                       (assessment.stats?.hasPortfolio ? { name: stats.repoName } : null);
+
   return (
     <div className="portfolio-assessment">
-      <h2>🎯 Portfolio Analysis</h2>
+      <h2>🎯 Portfolio Repository Analysis</h2>
       
       {stats.hasPortfolio ? (
         <>
@@ -305,16 +42,14 @@ function PortfolioAssessment({ repos, username }) {
               <p className="score-message">
                 {assessment.totalScore >= 80 ? 'Excellent! 🎯' : 
                  assessment.totalScore >= 60 ? 'Good, but can improve 💪' : 
-                 assessment.totalScore >= 40 ? 'Needs work ⚠️' : 
-                 'Requires major improvements 🚨'}
+                 'Needs work ⚠️'}
               </p>
             </div>
           </div>
           
-          {/* Show detection info */}
-          {detectionReason && (
+          {assessment.detectionReason && (
             <div className="detection-info">
-              <p><strong>Why this was detected as portfolio:</strong> {detectionReason}</p>
+              <p><strong>Why this was detected as portfolio:</strong> {assessment.detectionReason}</p>
             </div>
           )}
           
@@ -323,7 +58,6 @@ function PortfolioAssessment({ repos, username }) {
               <span className="detail-label">Portfolio Website</span>
               <span className="detail-value">
                 {stats.hasLiveDemo ? '✅ Deployed' : '❌ Not deployed'}
-                {stats.deploymentType !== 'Not deployed' && ` (${stats.deploymentType})`}
               </span>
             </div>
             <div className="detail-card">
@@ -348,12 +82,6 @@ function PortfolioAssessment({ repos, username }) {
               <span className="detail-label">Stars</span>
               <span className="detail-value">⭐ {stats.stars}</span>
             </div>
-            {stats.isGitHubPages && (
-              <div className="detail-card highlight">
-                <span className="detail-label">GitHub Pages</span>
-                <span className="detail-value">🚀 Enabled</span>
-              </div>
-            )}
           </div>
           
           <div className="portfolio-breakdown">
@@ -392,59 +120,27 @@ function PortfolioAssessment({ repos, username }) {
         <div className="no-portfolio">
           <h3>❌ No Portfolio Repository Found</h3>
           <p>We couldn't find a repository that appears to be a portfolio.</p>
-          <div className="portfolio-tips">
-            <h4>💡 Tips for creating a portfolio:</h4>
-            <ul>
-              <li>Create a repository named "portfolio", "my-website", or "[username].github.io"</li>
-              <li>Add a description mentioning your projects and skills</li>
-              <li>Enable GitHub Pages in repository settings</li>
-              <li>Include links to live project demos</li>
-            </ul>
-          </div>
         </div>
       )}
       
       <div className="recommendations">
         <h3>📋 Recommendations</h3>
         <ul>
-          {assessment.recommendations.map((rec, index) => (
+          {assessment.recommendations && assessment.recommendations.map((rec, index) => (
             <li key={index}>{rec}</li>
           ))}
         </ul>
       </div>
       
       {portfolioRepo && username && (
-        <div className="repo-links">
+        <div className="repo-link">
           <a 
             href={`https://github.com/${username}/${portfolioRepo.name}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="github-link"
           >
-            🔗 View on GitHub
+            🔗 View Portfolio Repository on GitHub
           </a>
-          
-          {portfolioRepo.homepage && (
-            <a 
-              href={portfolioRepo.homepage}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="deployment-link"
-            >
-              🌐 Visit Live Website
-            </a>
-          )}
-          
-          {stats.isGitHubPages && !portfolioRepo.homepage && (
-            <a 
-              href={`https://${username}.github.io/${portfolioRepo.name}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="deployment-link"
-            >
-              🌐 Visit GitHub Pages
-            </a>
-          )}
         </div>
       )}
     </div>

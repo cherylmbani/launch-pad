@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../Styles/Github.css"
+import "../Styles/Github.css";
 import PortfolioAssessment from "./PortfolioAssessment";
 import ActionableFeedback from "./ActionableFeedback";
 
@@ -10,12 +10,163 @@ function GitHubAnalysis() {
     const [currentUser, setCurrentUser] = useState(null);
     const [portfolioData, setPortfolioData] = useState(null);
 
+    // Portfolio analysis function
+    const analyzePortfolio = (repos, username) => {
+        console.log("🔍 Analyzing portfolio with", repos?.length, "repos for", username);
+        
+        if (!repos || repos.length === 0) {
+            return {
+                totalScore: 0,
+                completeness: 0,
+                codeQuality: 0,
+                bestPractices: 0,
+                presentation: 0,
+                stats: {
+                    hasPortfolio: false,
+                    repoName: 'Not found',
+                    hasDescription: false,
+                    hasLiveDemo: false,
+                    showsProjects: false
+                },
+                recommendations: ['No repositories to analyze']
+            };
+        }
+
+        // Find portfolio repo
+        const portfolioKeywords = ['portfolio', 'personal', 'website', 'cv', 'resume', 'showcase'];
+        
+        // Score each repo as potential portfolio
+        const scoredRepos = repos.map(repo => {
+            const repoName = repo.name?.toLowerCase() || '';
+            const repoDesc = repo.description?.toLowerCase() || '';
+            const combined = `${repoName} ${repoDesc}`;
+            
+            let score = 0;
+            let reasons = [];
+            
+            // Name contains "portfolio"
+            if (repoName.includes('portfolio')) {
+                score += 200;
+                reasons.push('Name contains "portfolio"');
+            }
+            
+            // Description contains "portfolio"
+            if (repoDesc.includes('portfolio')) {
+                score += 150;
+                reasons.push('Description mentions "portfolio"');
+            }
+            
+            // Name matches username
+            if (username && repoName === username.toLowerCase()) {
+                score += 100;
+                reasons.push('Repository name matches username');
+            }
+            
+            // Contains other portfolio keywords
+            const hasKeywords = portfolioKeywords.some(keyword => 
+                combined.includes(keyword) && keyword !== 'portfolio'
+            );
+            if (hasKeywords) {
+                score += 50;
+                reasons.push('Contains portfolio keywords');
+            }
+            
+            // Has description
+            if (repo.description) {
+                score += 40;
+                reasons.push('Has description');
+            }
+            
+            // Has GitHub Pages
+            if (repo.has_pages || repo.homepage) {
+                score += 30;
+                reasons.push('Has live deployment');
+            }
+            
+            return { repo, score, reasons };
+        });
+
+        // Sort by score (highest first)
+        scoredRepos.sort((a, b) => b.score - a.score);
+        console.log("🏆 Top portfolio candidates:", scoredRepos.slice(0, 3));
+
+        const bestCandidate = scoredRepos[0];
+        
+        if (!bestCandidate || bestCandidate.score < 50) {
+            return {
+                totalScore: 0,
+                completeness: 0,
+                codeQuality: 0,
+                bestPractices: 0,
+                presentation: 0,
+                stats: {
+                    hasPortfolio: false,
+                    repoName: 'Not found',
+                    hasDescription: false,
+                    hasLiveDemo: false,
+                    showsProjects: false
+                },
+                recommendations: ['No portfolio repository found']
+            };
+        }
+
+        const foundPortfolio = bestCandidate.repo;
+        console.log("✅ Selected portfolio:", foundPortfolio.name, "score:", bestCandidate.score);
+
+        // Analyze the portfolio repo
+        const hasDescription = foundPortfolio.description && foundPortfolio.description.length > 10;
+        const hasLiveDemo = foundPortfolio.has_pages || foundPortfolio.homepage;
+        const showsProjects = foundPortfolio.description?.toLowerCase().includes('project') || 
+                            foundPortfolio.description?.toLowerCase().includes('demo');
+
+        // Calculate score (0-100)
+        let totalScore = 0;
+        if (hasDescription) totalScore += 40;
+        if (hasLiveDemo) totalScore += 40;
+        if (showsProjects) totalScore += 20;
+
+        const recommendations = [];
+        if (!hasDescription) recommendations.push('Add description to portfolio repo');
+        if (!hasLiveDemo) recommendations.push('Deploy portfolio with GitHub Pages or Netlify');
+        if (!showsProjects) recommendations.push('Mention projects in description');
+
+        if (totalScore >= 80) {
+            recommendations.push('🎯 Excellent portfolio! Ready for job applications');
+        } else if (totalScore >= 60) {
+            recommendations.push('👍 Good portfolio, some improvements needed');
+        } else {
+            recommendations.push('⚠️ Portfolio needs significant improvements');
+        }
+
+        return {
+            totalScore: Math.min(totalScore, 100),
+            completeness: hasDescription ? 10 : 3,
+            codeQuality: foundPortfolio.language ? 8 : 4,
+            bestPractices: foundPortfolio.updated_at ? 7 : 3,
+            presentation: hasLiveDemo ? 10 : 2,
+            stats: {
+                hasPortfolio: true,
+                repoName: foundPortfolio.name,
+                hasDescription,
+                hasLiveDemo,
+                showsProjects,
+                lastUpdated: foundPortfolio.updated_at || 'Unknown',
+                stars: foundPortfolio.stargazers_count || 0,
+                descriptionLength: foundPortfolio.description?.length || 0
+            },
+            recommendations,
+            portfolioRepo: foundPortfolio,
+            detectionReason: bestCandidate.reasons.join(', ')
+        };
+    };
+
     useEffect(() => {
-        // Get user from localStorage (set during login)
+        // Get user from localStorage
         const user = JSON.parse(localStorage.getItem("user"));
         setCurrentUser(user);
+        
         if (!user) {
-            window.location.href = "/login";  // Redirect to login if not authenticated
+            window.location.href = "/login";
             return;
         }
         
@@ -42,7 +193,16 @@ function GitHubAnalysis() {
             return res.json();
         })
         .then(data => {
+            console.log("✅ GitHub analysis data received:", data);
             setAnalysis(data);
+            
+            // Analyze portfolio
+            if (data.repos) {
+                const portfolioResult = analyzePortfolio(data.repos, user.github_username);
+                console.log("📊 Portfolio analysis result:", portfolioResult);
+                setPortfolioData(portfolioResult);
+            }
+            
             setLoading(false);
         })
         .catch(err => {
@@ -135,26 +295,23 @@ function GitHubAnalysis() {
                     Refresh Analysis
                 </button>
             </div>
-            {console.log("1.Analysis exists?", !!analysis)}
-            {console.log("2. Repos exists?", analysis?.repos)}
-            {console.log("3. Repos count:", analysis?.repos?.length)}
-            {console.log("4. Should render Portfolio?", analysis && analysis.repos)}
             
-            {analysis && (
+            {/* Portfolio Assessment */}
+            {analysis && portfolioData && (
                 <PortfolioAssessment 
-                repos={analysis.repos || []}
-                username={JSON.parse(localStorage.getItem("user"))?.github_username}
+                    assessment={portfolioData}
+                    username={currentUser?.github_username}
                 />
             )}
+            
+            {/* Actionable Feedback */}
             {analysis && portfolioData && (
                 <ActionableFeedback 
-                analysis={analysis}
-                portfolioAssessment={{
-                    totalScore
-                }}
+                    analysis={analysis}
+                    portfolioAssessment={portfolioData}
+                    username={currentUser?.github_username}
                 />
             )}
-            
         </div>
     );
 }
