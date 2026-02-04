@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import "../Styles/Github.css"
 import PortfolioAssessment from "./PortfolioAssessment";
+import ActionableFeedback from "./ActionableFeedback";
 
 function GitHubAnalysis() {
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [portfolioData, setPortfolioData] = useState(null);
 
     useEffect(() => {
         // Get user from localStorage (set during login)
         const user = JSON.parse(localStorage.getItem("user"));
+        setCurrentUser(user);
         if (!user) {
             window.location.href = "/login";  // Redirect to login if not authenticated
             return;
@@ -140,7 +144,15 @@ function GitHubAnalysis() {
                 <PortfolioAssessment 
                 repos={analysis.repos || []}
                 username={JSON.parse(localStorage.getItem("user"))?.github_username}
-    />
+                />
+            )}
+            {analysis && portfolioData && (
+                <ActionableFeedback 
+                analysis={analysis}
+                portfolioAssessment={{
+                    totalScore
+                }}
+                />
             )}
             
         </div>
