@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, make_response, session
-from models import Repository, User, db, migrate, bcrypt
+from models import Repository, User, db, migrate, bcrypt, Project, ProjectApplication, ProjectTeam
 from flask_cors import CORS
 from flask_restful import Api, Resource
 import requests
@@ -185,12 +185,241 @@ class UserRepositories(Resource):
         }, 200
     
 
+# PROJECTS ENDPOINTS
+
+class Projects(Resource):
+    def get(self):
+        """Get all projects (with optional filters)"""
+        try:
+            projects = Project.query.filter_by(status='open').all()
+            
+            # Convert to JSON response
+            projects_data = []
+            for project in projects:
+                # Get client info
+                client = User.query.get(project.client_id)
+                
+                projects_data.append({
+                    'id': project.id,
+                    'title': project.title,
+                    'description': project.description,
+                    'short_description': project.description[:150] + '...' if len(project.description) > 150 else project.description,
+                    'budget_min': project.budget_min,
+                    'budget_max': project.budget_max,
+                    'timeline_weeks': project.timeline_weeks,
+                    'difficulty': project.difficulty,
+                    'project_type': project.project_type,
+                    'team_size_min': project.team_size_min,
+                    'team_size_max': project.team_size_max,
+                    'skills_required': project.skills_required.split(',') if project.skills_required else [],
+                    'status': project.status,
+                    'client': {
+                        'id': client.id if client else None,
+                        'name': f"{client.first_name} {client.last_name}" if client else "Unknown"
+                    },
+                    'created_at': project.created_at.isoformat() if project.created_at else None,
+                    'applications_count': len(project.applications)
+                })
+            
+            return projects_data, 200
+            
+        except Exception as e:
+            return {'error': str(e)}, 500
+    
+    def post(self):
+        """Create a new project (for clients)"""
+        try:
+            data = request.get_json()
+            
+            # Get user from session (for now, get user_id from request)
+            user_id = data.get('user_id')
+            if not user_id:
+                # Fallback: use test client
+                test_client = User.query.filter_by(email="client@example.com").first()
+                if not test_client:
+                    return {'error': 'No user found'}, 404
+                user_id = test_client.id
+            
+            # Create project
+            project = Project(
+                title=data['title'],
+                description=data['description'],
+                budget_min=data['budget_min'],
+                budget_max=data['budget_max'],
+                timeline_weeks=data['timeline_weeks'],
+                project_type=data.get('project_type', 'individual'),
+                difficulty=data.get('difficulty', 'beginner'),
+                team_size_min=data.get('team_size_min', 1),
+                team_size_max=data.get('team_size_max', 1),
+                skills_required=','.join(data.get('skills_required', [])),
+                client_id=user_id,
+                status='open'
+            )
+            
+            db.session.add(project)
+            db.session.commit()
+            
+            return {
+                'message': 'Project created successfully',
+                'project_id': project.id,
+                'title': project.title
+            }, 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+
+class SingleProject(Resource):
+    def get(self, project_id):
+        """Get a single project by ID"""
+        try:
+            project = Project.query.get(project_id)
+            
+            if not project:
+                return {'error': 'Project not found'}, 404
+            
+            # Get client info
+            client = User.query.get(project.client_id)
+            
+            # Get applications
+            applications = []
+            for app in project.applications:
+                dev = User.query.get(app.developer_id)
+                applications.append({
+                    'id': app.id,
+                    'proposal': app.proposal,
+                    'estimated_time': app.estimated_time,
+                    'estimated_cost': app.estimated_cost,
+                    'status': app.status,
+                    'developer': {
+                        'id': dev.id if dev else None,
+                        'name': f"{dev.first_name} {dev.last_name}" if dev else "Unknown",
+                        'github_username': dev.github_username if dev else None
+                    },
+                    'created_at': app.created_at.isoformat() if app.created_at else None
+                })
+            
+            return {
+                'id': project.id,
+                'title': project.title,
+                'description': project.description,
+                'budget_min': project.budget_min,
+                'budget_max': project.budget_max,
+                'timeline_weeks': project.timeline_weeks,
+                'difficulty': project.difficulty,
+                'project_type': project.project_type,
+                'team_size_min': project.team_size_min,
+                'team_size_max': project.team_size_max,
+                'skills_required': project.skills_required.split(',') if project.skills_required else [],
+                'status': project.status,
+                'client': {
+                    'id': client.id if client else None,
+                    'name': f"{client.first_name} {client.last_name}" if client else "Unknown"
+                },
+                'applications': applications,
+                'created_at': project.created_at.isoformat() if project.created_at else None
+            }, 200
+            
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+
+class ProjectApplications(Resource):
+    def post(self, project_id):
+        """Apply to a project (for developers)"""
+        try:
+            data = request.get_json()
+            
+            # Check if project exists
+            project = Project.query.get(project_id)
+            if not project:
+                return {'error': 'Project not found'}, 404
+            
+            # Check if project is open
+            if project.status != 'open':
+                return {'error': 'Project is not accepting applications'}, 400
+            
+            # Get developer (for now, use first user as developer)
+            # In real app, get from session
+            developer = User.query.filter_by(email="cheryl@example.com").first()
+            if not developer:
+                developer = User.query.first()
+            
+            # Check if already applied
+            existing = ProjectApplication.query.filter_by(
+                project_id=project_id,
+                developer_id=developer.id
+            ).first()
+            
+            if existing:
+                return {'error': 'You have already applied to this project'}, 400
+            
+            # Create application
+            application = ProjectApplication(
+                project_id=project_id,
+                developer_id=developer.id,
+                proposal=data.get('proposal', ''),
+                estimated_time=data.get('estimated_time'),
+                estimated_cost=data.get('estimated_cost'),
+                status='pending'
+            )
+            
+            db.session.add(application)
+            db.session.commit()
+            
+            return {
+                'message': 'Application submitted successfully',
+                'application_id': application.id,
+                'status': application.status
+            }, 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+    
+    def get(self, project_id):
+        """Get all applications for a project (for client)"""
+        try:
+            project = Project.query.get(project_id)
+            if not project:
+                return {'error': 'Project not found'}, 404
+            
+            applications = []
+            for app in project.applications:
+                dev = User.query.get(app.developer_id)
+                applications.append({
+                    'id': app.id,
+                    'proposal': app.proposal,
+                    'estimated_time': app.estimated_time,
+                    'estimated_cost': app.estimated_cost,
+                    'status': app.status,
+                    'developer': {
+                        'id': dev.id if dev else None,
+                        'name': f"{dev.first_name} {dev.last_name}" if dev else "Unknown",
+                        'github_username': dev.github_username if dev else None,
+                        'email': dev.email if dev else None
+                    },
+                    'created_at': app.created_at.isoformat() if app.created_at else None
+                })
+            
+            return applications, 200
+            
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+
+
 api.add_resource(Start, '/welcome')
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
 api.add_resource(GithubAnalysis, '/githubanalysis')
 api.add_resource(UserRepositories, '/user/repositories')
+# Projects endpoints
+api.add_resource(Projects, '/projects')
+api.add_resource(SingleProject, '/projects/<int:project_id>')
+api.add_resource(ProjectApplications, '/projects/<int:project_id>/apply')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
