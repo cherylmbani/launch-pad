@@ -7,7 +7,8 @@ function NavBar(){
             <nav>
                 <NavLink to="/signup">Signup</NavLink>
                 <NavLink to="/login">Login</NavLink>
-                <NavLink to="githubanalysis">GitHubAnalysis</NavLink>
+                <NavLink to="/githubanalysis">GitHubAnalysis</NavLink>
+                <NavLink to="/projects">Projects</NavLink>
             </nav>
 
         </div>

@@ -5,6 +5,7 @@ import Signup from './Components/pages/Signup';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from './Components/pages/Login';
 import GitHubAnalysis from './Components/pages/Github';
+import Projects from './Components/pages/Projects';
 
 // Create a separate component that uses useLocation
 function AppContent() {
@@ -20,7 +21,9 @@ function AppContent() {
         <Route path="/signup" element={<Signup />}/>
         <Route path="/login" element={<Login />} />
         <Route path="/githubanalysis" element={<GitHubAnalysis />} />
+        <Route path="/projects" element={<Projects />} />
         <Route path="/" element={<Navigate to="/login" />} />
+        
       </Routes>
     </div>
   );

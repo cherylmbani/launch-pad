@@ -116,6 +116,7 @@ function PortfolioAssessment({ assessment, username }) {
             </div>
           </div>
         </>
+        
       ) : (
         <div className="no-portfolio">
           <h3>❌ No Portfolio Repository Found</h3>
