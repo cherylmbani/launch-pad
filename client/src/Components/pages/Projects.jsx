@@ -166,24 +166,24 @@ function Projects() {
                             
                             <div className="project-details">
                                 <div className="detail-item">
-                                    <span className="detail-label">💰 Budget</span>
+                                    <span className="detail-label">Budget</span>
                                     <span className="detail-value">
                                         ${project.budget_min} - ${project.budget_max}
                                     </span>
                                 </div>
                                 
                                 <div className="detail-item">
-                                    <span className="detail-label">⏱️ Timeline</span>
+                                    <span className="detail-label">Timeline</span>
                                     <span className="detail-value">{project.timeline_weeks} weeks</span>
                                 </div>
                                 
                                 <div className="detail-item">
-                                    <span className="detail-label">👤 Type</span>
+                                    <span className="detail-label">Type</span>
                                     <span className="detail-value">{project.project_type}</span>
                                 </div>
                                 
                                 <div className="detail-item">
-                                    <span className="detail-label">📝 Applications</span>
+                                    <span className="detail-label">Applications</span>
                                     <span className="detail-value">{project.applications_count}</span>
                                 </div>
                             </div>

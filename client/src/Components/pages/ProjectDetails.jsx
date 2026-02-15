@@ -27,22 +27,22 @@ function ProjectDetails(){
                     
                     <div className="project-details-grid">
                         <div className="detail-item">
-                            <span className="detail-label">💰 Minimum Budget</span>
+                            <span className="detail-label">Minimum Budget</span>
                             <span className="detail-value">${details.budget_min}</span>
                         </div>
                         
                         <div className="detail-item">
-                            <span className="detail-label">💰 Maximum Budget</span>
+                            <span className="detail-label">Maximum Budget</span>
                             <span className="detail-value">${details.budget_max}</span>
                         </div>
                         
                         <div className="detail-item">
-                            <span className="detail-label">⏱️ Timeline</span>
+                            <span className="detail-label">Timeline</span>
                             <span className="detail-value">{details.timeline_weeks} weeks</span>
                         </div>
                         
                         <div className="detail-item">
-                            <span className="detail-label">📊 Difficulty</span>
+                            <span className="detail-label">Difficulty</span>
                             <span className={`difficulty-badge ${details.difficulty}`}>
                                 {details.difficulty}
                             </span>
@@ -50,7 +50,7 @@ function ProjectDetails(){
                     </div>
                     
                     <div className="skills-section">
-                        <h3 className="section-title">🛠️ Skills Required</h3>
+                        <h3 className="section-title">Skills Required</h3>
                         <div className="skills-list">
                             {details.skills_required?.map(skill => (
                                 <span key={skill} className="skill-tag">{skill}</span>
@@ -59,7 +59,6 @@ function ProjectDetails(){
                     </div>
                     
                     <div className="action-buttons">
-                        <button className="apply-btn">Apply for this Project</button>
                         <button className="back-btn" onClick={() => window.history.back()}>
                             ← Back to Projects
                         </button>
