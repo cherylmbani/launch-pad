@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "../Styles/Projects.css";
+import { useNavigate } from 'react-router-dom';
 
 function Projects() {
     const [projects, setProjects] = useState([]);
@@ -11,6 +12,7 @@ function Projects() {
         min_budget: '',
         max_budget: ''
     });
+    const navigate=useNavigate();
 
     useEffect(() => {
         fetchProjects();
@@ -196,7 +198,7 @@ function Projects() {
                             <div className="project-actions">
                                 <button 
                                     className="view-project-btn"
-                                    onClick={() => window.location.href = `/project/${project.id}`}
+                                    onClick={() => navigate(`/project/${project.short_description}`)}
                                 >
                                     View Details
                                 </button>

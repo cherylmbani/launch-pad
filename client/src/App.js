@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Login from './Components/pages/Login';
 import GitHubAnalysis from './Components/pages/Github';
 import Projects from './Components/pages/Projects';
+import ProjectDetails from './Components/pages/ProjectDetails';
 
 // Create a separate component that uses useLocation
 function AppContent() {
@@ -22,6 +23,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/githubanalysis" element={<GitHubAnalysis />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetails />} />
         <Route path="/" element={<Navigate to="/login" />} />
         
       </Routes>
