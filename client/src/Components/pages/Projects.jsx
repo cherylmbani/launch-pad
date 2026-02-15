@@ -198,7 +198,7 @@ function Projects() {
                             <div className="project-actions">
                                 <button 
                                     className="view-project-btn"
-                                    onClick={() => navigate(`/project/${project.short_description}`)}
+                                    onClick={() => navigate(`/project/${project.id}`)}
                                 >
                                     View Details
                                 </button>

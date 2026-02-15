@@ -23,7 +23,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/githubanalysis" element={<GitHubAnalysis />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:id" element={<ProjectDetails />} />
+        <Route path="/project/:id" element={<ProjectDetails />} />
         <Route path="/" element={<Navigate to="/login" />} />
         
       </Routes>
