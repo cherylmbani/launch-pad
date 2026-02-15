@@ -205,7 +205,7 @@ function Projects() {
                                 
                                 <button 
                                     className="apply-btn"
-                                    onClick={() => window.location.href = `/project/${project.id}/apply`}
+                                    onClick={() => navigate(`/project/${project.id}/apply`)}
                                 >
                                     Apply Now
                                 </button>

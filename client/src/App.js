@@ -7,6 +7,7 @@ import Login from './Components/pages/Login';
 import GitHubAnalysis from './Components/pages/Github';
 import Projects from './Components/pages/Projects';
 import ProjectDetails from './Components/pages/ProjectDetails';
+import ProjectForm from './Components/pages/ProjectForm';
 
 // Create a separate component that uses useLocation
 function AppContent() {
@@ -24,6 +25,7 @@ function AppContent() {
         <Route path="/githubanalysis" element={<GitHubAnalysis />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/project/:id" element={<ProjectDetails />} />
+        <Route path="/project/:id/apply" element={<ProjectForm />} />
         <Route path="/" element={<Navigate to="/login" />} />
         
       </Routes>
