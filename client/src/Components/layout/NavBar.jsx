@@ -9,6 +9,7 @@ function NavBar(){
                 <NavLink to="/login">Login</NavLink>
                 <NavLink to="/githubanalysis">GitHubAnalysis</NavLink>
                 <NavLink to="/projects">Projects</NavLink>
+                <NavLink to ="/interview-prep">InterviewPrep</NavLink>
             </nav>
 
         </div>
